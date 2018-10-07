@@ -1,0 +1,44 @@
+plugins {
+    id 'java'
+    id 'idea'
+    id "net.ltgt.apt-idea" version "0.18"
+}
+
+repositories {
+    mavenCentral()
+}
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+dependencies {
+    compile('com.amazonaws:aws-lambda-java-core:1.2.0',
+            'com.amazonaws:aws-lambda-java-events:2.2.2',
+
+            'com.amazonaws:aws-lambda-java-log4j2:1.1.0',
+            'org.apache.logging.log4j:log4j-core:2.11.1',
+            'org.apache.logging.log4j:log4j-api:2.11.1',
+
+            'com.amazonaws:aws-java-sdk-s3:1.11.419',
+
+            'com.google.dagger:dagger:2.17')
+
+    annotationProcessor 'com.google.dagger:dagger-compiler:2.17'
+    implementation 'com.google.dagger:dagger:2.17'
+}
+
+task buildZip(type: Zip) {
+    baseName = "serverless-architecture"
+    from compileJava
+    from processResources
+    into('lib') {
+        from configurations.runtime
+    }
+}
+
+build.dependsOn buildZip
+
+wrapper {
+    gradleVersion = '4.10.2'
+    distributionType = Wrapper.DistributionType.ALL
+}

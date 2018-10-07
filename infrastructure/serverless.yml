@@ -1,0 +1,21 @@
+service: serverless-architecture
+frameworkVersion: "=1.32.0"
+
+provider:
+  name: aws
+
+  stage: dev
+  region: eu-west-1
+
+resources:
+  Resources:
+    SNSLabelRequest:
+      Type: AWS::SNS::Topic
+      Properties:
+        DisplayName: label-generate-request-topic
+        TopicName: ${self:service}-${self:provider.stage}-label-request-topic
+
+    SQSLabelResponse:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: label-generate-response-queue

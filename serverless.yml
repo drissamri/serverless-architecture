@@ -1,0 +1,104 @@
+service: serverless-architecture-generator
+frameworkVersion: "=1.32.0"
+
+custom:
+  requestLabelSnsArn: 'arn:aws:sns:eu-west-1:539106611526:serverless-architecture-dev-label-request-topic'
+
+provider:
+  name: aws
+  runtime: java8
+
+  stage: tst
+  region: eu-west-1
+
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - s3:ListBucket
+      Resource:
+        Fn::Join:
+          - ""
+          - - "arn:aws:s3:::"
+            - Ref: LabelBucket
+    - Effect: Allow
+      Action:
+        - s3:GetObject
+        - s3:PutObject
+      Resource:
+        Fn::Join:
+          - ""
+          - - "arn:aws:s3:::"
+            - Ref: LabelBucket
+            - "/*"
+
+package:
+  artifact: build/distributions/serverless-architecture.zip
+
+
+functions:
+  create-label:
+    handler: be.drissamri.printing.LabelGeneratorLambda
+    events:
+      - sqs:
+          arn:
+            Fn::GetAtt: [ LabelRequestQueue, Arn ]
+          batchSize: 1
+    reservedConcurrency: 100
+
+
+resources:
+  Resources:
+    LabelRequestQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: label-generate-request
+
+    SQSQueuePolicy:
+      Type: 'AWS::SQS::QueuePolicy'
+      Properties:
+        Queues:
+          - Ref: LabelRequestQueue
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: 'Allow'
+              Principal: '*'
+              Action: 'sqs:SendMessage'
+              Resource:
+                Fn::GetAtt: [ LabelRequestQueue, Arn ]
+              Condition:
+                ArnEquals:
+                  aws:SourceArn: ${self:custom.requestLabelSnsArn}
+
+    SNSSubscription:
+      Type: AWS::SNS::Subscription
+      Properties:
+        Protocol: sqs
+        TopicArn: ${self:custom.requestLabelSnsArn}
+        Region: 'eu-west-1'
+        Endpoint:
+          Fn::GetAtt: [ LabelRequestQueue, Arn ]
+
+    SNSTopicPolicy:
+      Type: 'AWS::SNS::TopicPolicy'
+      Properties:
+        Topics:
+          - ${self:custom.requestLabelSnsArn}
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: 'Allow'
+              Principal: '*'
+              Action: 'sns:Publish'
+              Resource: ${self:custom.requestLabelSnsArn}
+
+    LabelBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:service}-bucket-${self:provider.stage}
+
+
+ #       NotificationConfiguration:
+ #         TopicConfigurations:
+ #           - Event: 's3:ObjectCreated:Put'
+ #             Topic: ${self:custom.requestLabelSnsArn}
