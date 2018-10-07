@@ -2,14 +2,15 @@ service: serverless-architecture-generator
 frameworkVersion: "=1.32.0"
 
 custom:
-  requestLabelSnsArn: 'arn:aws:sns:eu-west-1:539106611526:serverless-architecture-dev-label-request-topic'
+  requestLabelSnsArn: 'arn:aws:sns:eu-west-1:539106611526:serverless-architecture-prd-label-request-topic'
 
 provider:
   name: aws
   runtime: java8
 
-  stage: tst
+  stage: prd
   region: eu-west-1
+  environment:
 
   iamRoleStatements:
     - Effect: Allow
@@ -32,7 +33,7 @@ provider:
             - "/*"
 
 package:
-  artifact: build/distributions/serverless-architecture.zip
+  artifact: ./build/distributions/serverless-architecture.zip
 
 
 functions:
@@ -96,9 +97,3 @@ resources:
       Type: AWS::S3::Bucket
       Properties:
         BucketName: ${self:service}-bucket-${self:provider.stage}
-
-
- #       NotificationConfiguration:
- #         TopicConfigurations:
- #           - Event: 's3:ObjectCreated:Put'
- #             Topic: ${self:custom.requestLabelSnsArn}

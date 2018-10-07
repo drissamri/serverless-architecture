@@ -12,7 +12,7 @@ import java.util.List;
 
 public class LabelService {
     private static final Logger LOG = LogManager.getLogger(LabelService.class);
-    private static final String LABEL_BUCKET = "serverless-architecture-generator-bucket-tst";
+    private static final String LABEL_BUCKET = "serverless-architecture-generator-bucket-prd";
     private static final String FILENAME = "label/123456.zpl";
     private AmazonS3 amazonS3;
 
@@ -44,7 +44,7 @@ public class LabelService {
     }
 
     private S3ObjectInputStream generateLabel() {
-        LOG.info("Generating {} at Centiro...", FILENAME);
+        LOG.info("Generating {} at EXTERNAL VENDOR...", FILENAME);
         LOG.info("Generated {}.", FILENAME);
 
         final PutObjectResult s3UploadResult = amazonS3.putObject(LABEL_BUCKET, FILENAME, "ZPL CONTENTS");
