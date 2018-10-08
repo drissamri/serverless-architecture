@@ -3,7 +3,7 @@ frameworkVersion: "=1.32.0"
 
 custom:
   requestLabelSnsArn: 'arn:aws:sns:eu-west-1:539106611526:serverless-architecture-prd-label-request-topic'
-
+  responseLabelSqsArn: 'arn:aws:sqs:eu-west-1:539106611526:label-generate-response-queue'
 provider:
   name: aws
   runtime: java8
@@ -53,7 +53,17 @@ resources:
       Type: AWS::SQS::Queue
       Properties:
         QueueName: label-generate-request
+    ### Add SQS Consumer to SNS Producer
+    SNSSubscription:
+      Type: AWS::SNS::Subscription
+      Properties:
+        Protocol: sqs
+        TopicArn: ${self:custom.requestLabelSnsArn}
+        Region: 'eu-west-1'
+        Endpoint:
+          Fn::GetAtt: [ LabelRequestQueue, Arn ]
 
+    ### Allows SNS to trigger SQS
     SQSQueuePolicy:
       Type: 'AWS::SQS::QueuePolicy'
       Properties:
@@ -70,16 +80,7 @@ resources:
               Condition:
                 ArnEquals:
                   aws:SourceArn: ${self:custom.requestLabelSnsArn}
-
-    SNSSubscription:
-      Type: AWS::SNS::Subscription
-      Properties:
-        Protocol: sqs
-        TopicArn: ${self:custom.requestLabelSnsArn}
-        Region: 'eu-west-1'
-        Endpoint:
-          Fn::GetAtt: [ LabelRequestQueue, Arn ]
-
+    ### Allows Anonymous to trigger AWS SNS Publish
     SNSTopicPolicy:
       Type: 'AWS::SNS::TopicPolicy'
       Properties:
@@ -93,7 +94,60 @@ resources:
               Action: 'sns:Publish'
               Resource: ${self:custom.requestLabelSnsArn}
 
+    ### Response events published
+    SNSLabelResponse:
+      Type: AWS::SNS::Topic
+      Properties:
+        DisplayName: label-generate-response-topic
+        TopicName: ${self:service}-${self:provider.stage}-label-response-topic
+    SNSSubscriptionResponse:
+      Type: AWS::SNS::Subscription
+      Properties:
+        Protocol: sqs
+        TopicArn:
+          Ref: SNSLabelResponse
+        Region: 'eu-west-1'
+        Endpoint: ${self:custom.responseLabelSqsArn}
+    SNSTopicPolicyResponse:
+      Type: 'AWS::SNS::TopicPolicy'
+      Properties:
+        Topics:
+          - Ref: SNSLabelResponse
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            #     "Service": "s3.amazonaws.com"
+            - Effect: 'Allow'
+              Principal: '*'
+              Action: 'sns:Publish'
+              Resource:
+                - Ref: SNSLabelResponse
+              Condition:
+                StringLike:
+                  aws:SourceArn: "arn:aws:s3:*:*:${self:service}-bucket-${self:provider.stage}"
     LabelBucket:
       Type: AWS::S3::Bucket
       Properties:
         BucketName: ${self:service}-bucket-${self:provider.stage}
+        NotificationConfiguration:
+          TopicConfigurations:
+            - Event: s3:ObjectCreated:*
+              Topic: 'arn:aws:sns:eu-west-1:539106611526:serverless-architecture-generator-prd-label-response-topic'
+
+
+    SQSQueuePolicyResponse:
+      Type: 'AWS::SQS::QueuePolicy'
+      Properties:
+        Queues:
+          - 'https://sqs.eu-west-1.amazonaws.com/539106611526/label-generate-response-queue'
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: 'Allow'
+              Principal: '*'
+              Action: 'sqs:SendMessage'
+              Resource: ${self:custom.responseLabelSqsArn}
+              Condition:
+                ArnEquals:
+                  aws:SourceArn:
+                    - Ref: SNSLabelResponse
