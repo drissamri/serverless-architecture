@@ -8,7 +8,7 @@ provider:
   name: aws
   runtime: java8
 
-  stage: prd
+  stage: uat
   region: eu-west-1
   environment:
 
@@ -68,7 +68,7 @@ resources:
       Type: 'AWS::SQS::QueuePolicy'
       Properties:
         Queues:
-          - Ref: LabelRequestQueue
+          - Ref:  LabelRequestQueue
         PolicyDocument:
           Version: '2012-10-17'
           Statement:
@@ -124,15 +124,16 @@ resources:
                 - Ref: SNSLabelResponse
               Condition:
                 StringLike:
-                  aws:SourceArn: "arn:aws:s3:*:*:${self:service}-bucket-${self:provider.stage}"
+                  aws:SourceArn: "arn:aws:s3:*:*:serverless-architecture-uat"
     LabelBucket:
       Type: AWS::S3::Bucket
+      DependsOn: SNSTopicPolicyResponse
       Properties:
-        BucketName: ${self:service}-bucket-${self:provider.stage}
+        BucketName: serverless-architecture-uat
         NotificationConfiguration:
           TopicConfigurations:
             - Event: s3:ObjectCreated:*
-              Topic: 'arn:aws:sns:eu-west-1:539106611526:serverless-architecture-generator-prd-label-response-topic'
+              Topic: 'arn:aws:sns:eu-west-1:539106611526:serverless-architecture-generator-uat-label-response-topic'
 
 
     SQSQueuePolicyResponse:

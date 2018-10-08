@@ -12,7 +12,7 @@ import java.util.List;
 
 public class LabelService {
     private static final Logger LOG = LogManager.getLogger(LabelService.class);
-    private static final String LABEL_BUCKET = "serverless-architecture-generator-bucket-prd";
+    private static final String LABEL_BUCKET = "serverless-architecture-uat";
     private static final String FILENAME = "label/123456.zpl";
     private AmazonS3 amazonS3;
 
