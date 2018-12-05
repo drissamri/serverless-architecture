@@ -9,11 +9,11 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.List;
+import java.util.UUID;
 
 public class LabelService {
     private static final Logger LOG = LogManager.getLogger(LabelService.class);
-    private static final String LABEL_BUCKET = "serverless-architecture-uat";
-    private static final String FILENAME = "label/123456.zpl";
+    private static final String LABEL_BUCKET = "serverless-architecture-dev";
     private AmazonS3 amazonS3;
 
     public LabelService(AmazonS3 amazonS3) {
@@ -27,28 +27,30 @@ public class LabelService {
     private void processMessage(final SQSEvent.SQSMessage message) {
         LOG.info("Processing message: {}", message.getMessageId());
 
-        boolean labelGenerated = amazonS3.doesObjectExist(LABEL_BUCKET, FILENAME);
+        String uniqueFile = "label/" + UUID.randomUUID().toString() + "123456.zpl";
+        boolean labelGenerated = amazonS3.doesObjectExist(LABEL_BUCKET, uniqueFile);
         S3ObjectInputStream labelInputStream = null;
         if(labelGenerated) {
-            LOG.info("File: {} found.", FILENAME);
-            labelInputStream = retrieveLabel();
+            LOG.info("File: {} found.", uniqueFile);
+            labelInputStream = retrieveLabel(uniqueFile);
         } else {
-            LOG.info("File: {} not found", FILENAME);
-            labelInputStream = generateLabel();
+            LOG.info("File: {} not found", uniqueFile);
+            labelInputStream = generateLabel(uniqueFile);
         }
     }
 
-    private S3ObjectInputStream retrieveLabel() {
-        final S3Object labelObject = amazonS3.getObject(LABEL_BUCKET, FILENAME);
+    private S3ObjectInputStream retrieveLabel(String fileName) {
+        final S3Object labelObject = amazonS3.getObject(LABEL_BUCKET, fileName);
         return labelObject.getObjectContent();
     }
 
-    private S3ObjectInputStream generateLabel() {
-        LOG.info("Generating {} at EXTERNAL VENDOR...", FILENAME);
-        LOG.info("Generated {}.", FILENAME);
+    private S3ObjectInputStream generateLabel(String fileName) {
+        LOG.info("Generating {} at EXTERNAL VENDOR...", fileName);
+        LOG.info("Generated {}.", fileName);
 
-        final PutObjectResult s3UploadResult = amazonS3.putObject(LABEL_BUCKET, FILENAME, "ZPL CONTENTS");
-        LOG.info("File: {} uploaded.", FILENAME);
+        LOG.info("Uploading to bucket: {}.", LABEL_BUCKET);
+        final PutObjectResult s3UploadResult = amazonS3.putObject(LABEL_BUCKET, fileName, "ZPL CONTENTS");
+        LOG.info("File: {} uploaded.", fileName);
 
         return null;
     }

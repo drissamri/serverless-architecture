@@ -1,14 +1,16 @@
 buildscript {
     ext {
         daggerVersion = '2.19'
+        awsSdkVersion = '1.11.463'
+        awsXrayVersion = '2.1.0'
     }
 }
-
 
 plugins {
     id 'java'
     id 'idea'
-    id "net.ltgt.apt-idea" version "0.18"
+    id "net.ltgt.apt-idea" version "0.19"
+    id "com.github.ben-manes.versions" version "0.20.0"
 }
 
 repositories {
@@ -18,15 +20,21 @@ repositories {
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
+
 dependencies {
     compile('com.amazonaws:aws-lambda-java-core:1.2.0',
-            'com.amazonaws:aws-lambda-java-events:2.2.2',
+            'com.amazonaws:aws-lambda-java-events:2.2.4',
+
+            "com.amazonaws:aws-java-sdk-s3:${awsSdkVersion}",
+            "com.amazonaws:aws-java-sdk-xray:${awsSdkVersion}",
+            
+            "com.amazonaws:aws-xray-recorder-sdk-core:${awsXrayVersion}",
+            "com.amazonaws:aws-xray-recorder-sdk-aws-sdk:${awsXrayVersion}",
+            "com.amazonaws:aws-xray-recorder-sdk-aws-sdk-instrumentor:${awsXrayVersion}",
 
             'com.amazonaws:aws-lambda-java-log4j2:1.1.0',
             'org.apache.logging.log4j:log4j-core:2.11.1',
             'org.apache.logging.log4j:log4j-api:2.11.1',
-
-            'com.amazonaws:aws-java-sdk-s3:1.11.463',
 
             "com.google.dagger:dagger:${daggerVersion}")
 
@@ -46,6 +54,6 @@ task buildZip(type: Zip) {
 build.dependsOn buildZip
 
 wrapper {
-    gradleVersion = '4.10.2'
+    gradleVersion = '5.0'
     distributionType = Wrapper.DistributionType.ALL
 }

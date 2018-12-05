@@ -1,15 +1,16 @@
 service: serverless-architecture-generator
-frameworkVersion: "=1.32.0"
+frameworkVersion: "=1.34.1"
 
 custom:
-  requestLabelSnsArn: 'arn:aws:sns:eu-west-1:539106611526:serverless-architecture-prd-label-request-topic'
+  requestLabelSnsArn: 'arn:aws:sns:eu-west-1:539106611526:serverless-architecture-dev-label-request-topic'
   responseLabelSqsArn: 'arn:aws:sqs:eu-west-1:539106611526:label-generate-response-queue'
 provider:
   name: aws
   runtime: java8
 
-  stage: uat
+  stage: dev
   region: eu-west-1
+  tracing: true # enable tracing
   environment:
 
   iamRoleStatements:
@@ -31,6 +32,16 @@ provider:
           - - "arn:aws:s3:::"
             - Ref: LabelBucket
             - "/*"
+
+    - Effect: "Allow" # xray permissions (required)
+      Action:
+        - "xray:PutTraceSegments"
+        - "xray:PutTelemetryRecords"
+      Resource:
+        - "*"
+
+plugins:
+  - serverless-plugin-tracing
 
 package:
   artifact: ./build/distributions/serverless-architecture.zip
@@ -124,16 +135,16 @@ resources:
                 - Ref: SNSLabelResponse
               Condition:
                 StringLike:
-                  aws:SourceArn: "arn:aws:s3:*:*:serverless-architecture-uat"
+                  aws:SourceArn: "arn:aws:s3:*:*:serverless-architecture-dev"
     LabelBucket:
       Type: AWS::S3::Bucket
       DependsOn: SNSTopicPolicyResponse
       Properties:
-        BucketName: serverless-architecture-uat
+        BucketName: serverless-architecture-dev
         NotificationConfiguration:
           TopicConfigurations:
             - Event: s3:ObjectCreated:*
-              Topic: 'arn:aws:sns:eu-west-1:539106611526:serverless-architecture-generator-uat-label-response-topic'
+              Topic: 'arn:aws:sns:eu-west-1:539106611526:serverless-architecture-generator-dev-label-response-topic'
 
 
     SQSQueuePolicyResponse:
