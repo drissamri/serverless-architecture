@@ -8,13 +8,17 @@ custom:
     buckets:
       - serverless-architecture-dev
 
+plugins:
+  - serverless-plugin-tracing
+  - serverless-s3-remover
+
 provider:
   name: aws
   runtime: java8
 
   stage: dev
   region: eu-west-1
-  tracing: true # enable tracing
+  tracing: false # enable tracing
   environment:
 
   iamRoleStatements:
@@ -43,10 +47,6 @@ provider:
         - "xray:PutTelemetryRecords"
       Resource:
         - "*"
-
-plugins:
-  - serverless-plugin-tracing
-  - serverless-s3-remover
 
 
 package:

@@ -26,11 +26,6 @@ dependencies {
             'com.amazonaws:aws-lambda-java-events:2.2.4',
 
             "com.amazonaws:aws-java-sdk-s3:${awsSdkVersion}",
-            "com.amazonaws:aws-java-sdk-xray:${awsSdkVersion}",
-            
-            "com.amazonaws:aws-xray-recorder-sdk-core:${awsXrayVersion}",
-            "com.amazonaws:aws-xray-recorder-sdk-aws-sdk:${awsXrayVersion}",
-            "com.amazonaws:aws-xray-recorder-sdk-aws-sdk-instrumentor:${awsXrayVersion}",
 
             'com.amazonaws:aws-lambda-java-log4j2:1.1.0',
             'org.apache.logging.log4j:log4j-core:2.11.1',
